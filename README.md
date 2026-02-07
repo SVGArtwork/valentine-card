@@ -33,7 +33,7 @@ No backend, no database.
 
 ## Live Demo
 
-https://svgartwork.github.io/valentine-digital-card/
+https://svgartwork.github.io/valentine-card/
 
 ---
 
