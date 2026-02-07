@@ -5,7 +5,7 @@ Valentine Digital Card is an interactive illustration created as a Progressive W
 The project started as a simple illustration to celebrate Valentine’s Day, but gradually turned into a small experiment on the relationship between drawing, time, and interaction.  
 It is not a video, it is not a GIF: the illustration remains an illustration, but it gains movement, rhythm, and surprise.
 
-[![valentine-digital-card preview](assets/valentine-preview.png)](https://svgartwork.github.io/valentine-card/)
+[![valentine-card preview](assets/valentine-preview.png)](https://svgartwork.github.io/valentine-card/)
 
 ---
 
