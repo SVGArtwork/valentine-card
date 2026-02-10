@@ -1,6 +1,6 @@
 {
-  "short_name": "Valentine Card",
-  "name": "Valentine Digital Card",
+  "short_name": "Fourteen",
+  "name": "Fourteen — Valentine Card",
   "description": "An interactive illustrated Valentine card built with inline SVG and JavaScript.",
   "start_url": "./",
   "scope": "./",
