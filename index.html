@@ -264,7 +264,8 @@ cursor: pointer;
 
 <script>
 /* ==========================
-   TITOLI DI TESTA
+   TITOLI DI TESTA - LOGICA RIBALTATA
+   I titoli NON partono finché l'SVG non è pronto
 ========================== */
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -272,81 +273,83 @@ document.addEventListener("DOMContentLoaded", () => {
   const velo = document.getElementById("Velo");
   const quattordici = document.getElementById("Quattordici");
   
-  const FADE_DELAY = 4000;    // attesa prima della sigla
   const FADE_DURATION = 1500; // deve combaciare col CSS
   
-  // --- STATO PER ATTENDERE SVG ---
+  // --- STATO ---
   let svgPronto = false;
-  let animazioneInAttesa = false;
-  let animazioneAvviata = false;   // <-- SPOSTATO QUI (scope corretto)
+  let titoliAvviati = false;
+  let animazioneAvviata = false;
 
-  function avviaSePronto() {
-    if (!animazioneAvviata && svgPronto && window.avviaAnimazionePrincipale) {
-      animazioneAvviata = true;
-      window.avviaAnimazionePrincipale();
-    } else if (!svgPronto) {
-      animazioneInAttesa = true;
-    }
-  }
-  
-  // --- ATTESA SVG (con fallback) ---
-  const svg = document.getElementById('svg-content');
-  if (svg) {
-    // Per SVG inline, 'complete' non funziona come per le immagini
-    // Usiamo invece un approccio più affidabile
-    const attendiSVGPronto = () => {
+  // --- ATTENDI SVG PRONTO (Traiettoria misurabile) ---
+  function attendiSVGPronto(callback) {
+    const check = () => {
       const traiettoria = document.getElementById('Traiettoria');
       if (traiettoria && typeof traiettoria.getTotalLength === 'function') {
         try {
-          const length = traiettoria.getTotalLength();
-          if (length > 0) {
+          if (traiettoria.getTotalLength() > 0) {
+            console.log('✅ SVG pronto, posso partire con i titoli');
             svgPronto = true;
-            if (animazioneInAttesa) avviaSePronto();
+            callback?.();
             return true;
           }
         } catch(e) {}
       }
+      console.log('⏳ In attesa che SVG sia pronto...');
       return false;
     };
     
-    // Se non è già pronto, ricontrolla ogni 100ms
-    if (!attendiSVGPronto()) {
-      const checkInterval = setInterval(() => {
-        if (attendiSVGPronto()) {
-          clearInterval(checkInterval);
+    if (!check()) {
+      const interval = setInterval(() => {
+        if (check()) {
+          clearInterval(interval);
         }
       }, 100);
     }
-  } else {
-    // Fallback se l'SVG non viene trovato
-    setTimeout(() => { 
-      svgPronto = true;
-      if (animazioneInAttesa) avviaSePronto();
-    }, 500);
   }
-  // --- FINE NUOVO ---
 
-  setTimeout(() => {
-    // fade-out titoli e velo
-    [titoli, velo].forEach(el => el?.classList.add("fade-out"));
-
-    // fine dissolvenza
+  // --- AVVIA LA SEQUENZA TITOLI (SOLO SE SVG PRONTO) ---
+  function avviaTitoli() {
+    if (titoliAvviati) return;
+    if (!svgPronto) {
+      console.log('⏳ Titoli in attesa di SVG...');
+      return;
+    }
+    
+    titoliAvviati = true;
+    console.log('🎬 Avvio sequenza titoli (SVG pronto)');
+    
+    // Aspetta 4 secondi, POI fade out
     setTimeout(() => {
-      // rimozione completa
-      [titoli, velo].forEach(el => {
-        if (el) el.style.display = "none";
-      });
+      // fade-out titoli e velo
+      [titoli, velo].forEach(el => el?.classList.add("fade-out"));
 
-      // sparisce 14 dentro Cuore 
-      if (quattordici) quattordici.style.display = "none";
-	   
-      // ⏱️ UN SOLO MECCANISMO DI AVVIO
+      // fine dissolvenza
       setTimeout(() => {
-        avviaSePronto();  // <-- USA QUESTO, NON window.avviaAnimazionePrincipale diretto
-      }, 3000);
+        // rimozione completa
+        [titoli, velo].forEach(el => {
+          if (el) el.style.display = "none";
+        });
 
-    }, FADE_DURATION);
-  }, FADE_DELAY);
+        // sparisce 14 dentro Cuore 
+        if (quattordici) quattordici.style.display = "none";
+        
+        // Attesa BREVE prima dell'animazione principale
+        setTimeout(() => {
+          if (!animazioneAvviata && window.avviaAnimazionePrincipale) {
+            animazioneAvviata = true;
+            window.avviaAnimazionePrincipale();
+          }
+        }, 500); // ridotto a 500ms perché tanto abbiamo già aspettato SVG
+      }, FADE_DURATION);
+      
+    }, 4000); // FADE_DELAY
+  }
+
+  // --- INIZIALIZZA: aspetta SVG, POI parti con i titoli ---
+  attendiSVGPronto(() => {
+    avviaTitoli();
+  });
+
 });
 </script>
 
