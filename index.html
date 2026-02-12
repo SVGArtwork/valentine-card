@@ -271,16 +271,10 @@ cursor: pointer;
     <p id="info-text"></p>
 </div>
 
-
-
-
-
-
-
-
 <script>
 /* ==========================
    SHOW PANEL INFO
+   Gestisce il pannello informativo quando si clicca un elemento SVG
 ========================== */
 const svgInfoMap = {
     Gatto: {
@@ -290,6 +284,7 @@ const svgInfoMap = {
 };
 
 function bindSvgInfo() {
+    // Associa l'evento click/pointer agli SVG definiti in svgInfoMap
     Object.entries(svgInfoMap).forEach(([id, data]) => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -302,68 +297,52 @@ function bindSvgInfo() {
 }
 
 function showInfo(title, text) {
+    // Mostra il pannello informativo con titolo e testo
     document.getElementById('info-title').textContent = title;
     document.getElementById('info-text').textContent = text;
-
-    document
-        .getElementById('info-panel')
-        .classList.remove('hidden');
+    document.getElementById('info-panel').classList.remove('hidden');
 }
-
-
-
-
-document.addEventListener('DOMContentLoaded', bindSvgInfo);
-
 
 function closeInfoPanel() {
     const infoPanel = document.getElementById('info-panel');
-    if (infoPanel) {
-        infoPanel.classList.add('hidden');
-    }
+    if (infoPanel) infoPanel.classList.add('hidden');
 }
 
-
 document.addEventListener('DOMContentLoaded', () => {
-    const closeBtn = document.getElementById('close-info');
+    bindSvgInfo();
 
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeInfoPanel);
-    }
+    const closeBtn = document.getElementById('close-info');
+    if (closeBtn) closeBtn.addEventListener('click', closeInfoPanel);
 });
 </script>
-
-
-
-
 
 <script>
 /* ==========================
    ZOOM e PANNING
+   Gestione dello zoom e pan del contenuto SVG
 ========================== */
 document.addEventListener('DOMContentLoaded', () => {
-    // === INIZIALIZZAZIONE PAN-ZOOM ===
     const panZoom = svgPanZoom('#svg-content', {
         zoomEnabled: true,
         panEnabled: true,
         controlIconsEnabled: false,
-        contain: true,    // impedisce di "uscire" dall'SVG
-        fit: true,        // scala per adattare
-        center: true,     // centra nella viewport
+        contain: true,
+        fit: true,
+        center: true,
         minZoom: 1,
         maxZoom: 5
     });
 
-    // === SLIDER (se presente) ===
+    // Slider di zoom
     const slider = document.getElementById('zoom-slider');
     if (slider) {
-        slider.value = panZoom.getZoom(); // inizializza
+        slider.value = panZoom.getZoom();
         slider.addEventListener('input', function () {
             panZoom.zoom(Number(this.value));
         });
     }
 
-    // === PULSANTI ZOOM ===
+    // Pulsanti zoom
     const zoomInBtn = document.getElementById('zoom-in');
     const zoomOutBtn = document.getElementById('zoom-out');
 
@@ -379,618 +358,268 @@ document.addEventListener('DOMContentLoaded', () => {
         if (slider) slider.value = panZoom.getZoom();
     });
 
-    // === LISTENER RESIZE ===
-    const resizePanZoom = () => {
+    // Adatta panZoom al ridimensionamento finestra
+    window.addEventListener('resize', () => {
         panZoom.resize();
         panZoom.fit();
         panZoom.center();
-    };
-
-    window.addEventListener('resize', resizePanZoom);
-
-   
-
+    });
 });
 </script>
-	
-	
+
 <script>
 /* ==========================
    LAMPADINE (ACCESO/SPENTO)
+   Animazioni delle lampadine: random, pari, dispari
 ========================== */
+const totalLamps = 28;
+let intervalId;
 
-    const totalLamps = 28; // Numero massimo di lampadine
-    let intervalId;       // ID dell'intervallo
-    
-    // Configurazione delle modalità
-    const modes = [
-        {
-            name: "random",
-            duration: 3000, // 3 secondi
-            start: () => {
-                // Modalità random con più lampadine accese contemporaneamente
-                const activeLamps = Math.floor(Math.random() * 8) + 3; // Da 3 a 10 lampadine accese
-                intervalId = setInterval(() => randomLamps(activeLamps), 200);
-            }
-        },
-        {
-            name: "even",
-            duration: 2500, // 2.5 secondi
-            start: () => intervalId = setInterval(() => fastAlternateLamps(true), 150) // Più veloce!
-        },
-        {
-            name: "odd", 
-            duration: 2500, // 2.5 secondi
-            start: () => intervalId = setInterval(() => fastAlternateLamps(false), 150) // Più veloce!
-        }
-    ];
-    
-    let currentModeIndex = 0;
-    let alternateState = true; // Stato per alternare accensione/spegnimento
+const modes = [
+    { name: "random", duration: 3000, start: () => intervalId = setInterval(() => randomLamps(Math.floor(Math.random() * 8) + 3), 200) },
+    { name: "even", duration: 2500, start: () => intervalId = setInterval(() => fastAlternateLamps(true), 150) },
+    { name: "odd", duration: 2500, start: () => intervalId = setInterval(() => fastAlternateLamps(false), 150) }
+];
 
-    // Funzione per accendere e spegnere una lampadina
-    function setLampState(lampId, state) {
-        const lamp = document.getElementById(lampId);
-        if (lamp) {
-            lamp.style.opacity = state ? "1" : "0.3";
-        }
-    }
+let currentModeIndex = 0;
+let alternateState = true;
 
-    // Funzione per spegnere tutte le lampadine
-    function turnOffAllLamps() {
+// Accende/spegne una lampadina
+function setLampState(lampId, state) {
+    const lamp = document.getElementById(lampId);
+    if (lamp) lamp.style.opacity = state ? "1" : "0.3";
+}
+
+// Spegne tutte le lampadine
+function turnOffAllLamps() {
+    for (let i = 1; i <= totalLamps; i++) setLampState(`Lamp_${i}`, false);
+}
+
+// Accende un numero casuale di lampadine
+function randomLamps(numberOfLamps = 5) {
+    turnOffAllLamps();
+    const allLampIds = Array.from({ length: totalLamps }, (_, i) => i + 1);
+    const shuffled = [...allLampIds].sort(() => Math.random() - 0.5);
+    shuffled.slice(0, numberOfLamps).forEach(id => setLampState(`Lamp_${id}`, true));
+}
+
+// Lampeggia lampadine pari o dispari
+function fastAlternateLamps(isEven) {
+    alternateState = !alternateState;
+    if (alternateState) {
         for (let i = 1; i <= totalLamps; i++) {
-            setLampState(`Lamp_${i}`, false);
+            setLampState(`Lamp_${i}`, isEven ? i % 2 === 0 : i % 2 !== 0);
         }
-    }
+    } else turnOffAllLamps();
+}
 
-    // Funzione per accendere multiple lampadine randomiche
-    function randomLamps(numberOfLamps = 5) {
-        // Spegni tutte le lampadine
-        turnOffAllLamps();
-        
-        // Crea un array con tutti gli ID delle lampadine
-        const allLampIds = Array.from({length: totalLamps}, (_, i) => i + 1);
-        
-        // Mescola l'array per ottenere un ordine casuale
-        const shuffledLamps = [...allLampIds].sort(() => Math.random() - 0.5);
-        
-        // Prendi le prime 'numberOfLamps' lampadine
-        const lampsToLight = shuffledLamps.slice(0, numberOfLamps);
-        
-        // Accendi le lampadine selezionate
-        lampsToLight.forEach(lampId => {
-            setLampState(`Lamp_${lampId}`, true);
-        });
-    }
+// Passa alla modalità successiva
+function switchToNextMode() {
+    clearInterval(intervalId);
+    turnOffAllLamps();
+    alternateState = true;
 
-    // Funzione VELOCE per lampeggiare lampadine pari o dispari (con effetto lampeggio)
-    function fastAlternateLamps(isEven) {
-        // Alterna tra accensione e spegnimento
-        alternateState = !alternateState;
-        
-        if (alternateState) {
-            // Accendi le lampadine pari o dispari
-            for (let i = 1; i <= totalLamps; i++) {
-                if (isEven ? i % 2 === 0 : i % 2 !== 0) {
-                    setLampState(`Lamp_${i}`, true);
-                } else {
-                    setLampState(`Lamp_${i}`, false);
-                }
-            }
-        } else {
-            // Spegni tutte le lampadine
-            turnOffAllLamps();
-        }
-    }
+    const mode = modes[currentModeIndex];
+    mode.start();
 
-    // Funzione per passare alla modalità successiva
-    function switchToNextMode() {
-        clearInterval(intervalId);
-        turnOffAllLamps();
-        alternateState = true; // Resetta lo stato di alternanza
-        
-        const currentMode = modes[currentModeIndex];
-        currentMode.start();
-        
-        currentModeIndex = (currentModeIndex + 1) % modes.length;
-        setTimeout(switchToNextMode, currentMode.duration);
-    }
+    currentModeIndex = (currentModeIndex + 1) % modes.length;
+    setTimeout(switchToNextMode, mode.duration);
+}
 
-    // Avvio dell'animazione al caricamento della pagina
-    window.addEventListener("DOMContentLoaded", () => {
-        setTimeout(() => {
-            switchToNextMode();
-        }, 2000);
-    });
-
+window.addEventListener("DOMContentLoaded", () => setTimeout(switchToNextMode, 2000));
 </script>
 
-
 <script>
+/* ==========================
+   ANIMAZIONE PRINCIPALE TAPPO & BOLLICINE
+========================== */
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* ==========================
-     RIFERIMENTI SVG
-  ========================== */
-  const sughero = document.getElementById("Sughero");
-  const traiettoria = document.getElementById("Traiettoria");
-  const skizzo1 = document.getElementById("Skizzo_1");
-  const skizzo2 = document.getElementById("Skizzo_2");
-  const schiumaSopra = document.getElementById("Schiuma_Sopra");
-  const schiumaSotto = document.getElementById("Schiuma_Sotto");
-  const mano = document.getElementById("Mano_Flut");
-  const smile = document.getElementById("Smile");
-  const occhiGatto = document.getElementById("Occhi_Gatto_01");
-  const testo = document.getElementById("Testo");
+    // Riferimenti SVG
+    const sughero = document.getElementById("Sughero");
+    const traiettoria = document.getElementById("Traiettoria");
+    const skizzo1 = document.getElementById("Skizzo_1");
+    const skizzo2 = document.getElementById("Skizzo_2");
+    const schiumaSopra = document.getElementById("Schiuma_Sopra");
+    const schiumaSotto = document.getElementById("Schiuma_Sotto");
+    const mano = document.getElementById("Mano_Flut");
+    const smile = document.getElementById("Smile");
+    const occhiGatto = document.getElementById("Occhi_Gatto_01");
+    const testo = document.getElementById("Testo");
 
-  /* ==========================
-     PARAMETRI
-  ========================== */
-  const delay = 2000;
-  const durata = 2000;
-  //const lunghezza = traiettoria.getTotalLength();
-  const giriMinimi = 2;
-  const rumoreAmpiezza = 25;
-  const rumoreFrequenza = 12;
-  const flipY = Math.random() < 0.5 ? -1 : 1;
-  const spinExtra = Math.random() * 360;
+    // Parametri animazione
+    const durata = 2000;
+    const giriMinimi = 2;
+    const rumoreAmpiezza = 25;
+    const rumoreFrequenza = 12;
+    const flipY = Math.random() < 0.5 ? -1 : 1;
+    const spinExtra = Math.random() * 360;
 
-  /* ==========================
-     STATO
-  ========================== */
-  let occhiAperti = false;
-  let startTime = null;
-  let animazioneInCorso = false;
-  let bollicineAttive = false;
-  const bollicineTimers = [];
+    let occhiAperti = false;
+    let startTime = null;
+    let animazioneInCorso = false;
+    const bollicineTimers = [];
 
-  /* ==========================
-     ZAMPILLIO
-  ========================== */
-  function zampillio(cicli, intervallo) {
-    const sequenza = [
-      { s1: true,  s2: false },
-      { s1: true,  s2: true  },
-      { s1: false, s2: true  },
-      { s1: true,  s2: true  },
-      { s1: true,  s2: false }
-    ];
-
-    let ciclo = 0;
-    let step = 0;
-
-    const timer = setInterval(() => {
-      const stato = sequenza[step];
-
-      if (skizzo1) skizzo1.style.display = stato.s1 ? "inline" : "none";
-      if (skizzo2) skizzo2.style.display = stato.s2 ? "inline" : "none";
-
-      if (step === 1 && schiumaSopra) {
-        schiumaSopra.style.display = "inline";
-      }
-
-      if (step === 3 && schiumaSotto) {
-        schiumaSotto.style.display = "inline";
-      }
-
-      step++;
-
-      if (step >= sequenza.length) {
-        step = 0;
-        ciclo++;
-      }
-
-      if (ciclo >= cicli) {
-        clearInterval(timer);
-
-        if (skizzo1) skizzo1.style.display = "none";
-        if (skizzo2) skizzo2.style.display = "none";
-        if (sughero) sughero.style.display = "none";
-        if (mano) mano.style.display = "inline";
-        if (smile) smile.style.display = "inline";
-
-        // 🐱 IL GATTO SI RIADDORMENTA
-        if (occhiGatto) occhiGatto.style.display = "none";
-        occhiAperti = false;
-
-     
-		setState(AppState.IDLE);
-      }
-    }, intervallo);
-  }
-
- /* ==========================
-   BOLLICINE (SICURE, NO MEMORY LEAK)
-========================== */
-function avviaBollicine(prefixId, numero = 11) {
-  // Evita accumulo di timer se chiamata due volte
-  if (!animazioneInCorso) return;
-  
-  for (let i = 1; i <= numero; i++) {
-    const bolla = document.getElementById(`${prefixId}_${i}`);
-    if (!bolla) continue;
-
-    bolla.style.display = "none";
-    
-    // Funzione ricorsiva SICURA
-    function cicloBolla() {
-      // ESCE SUBITO se l'animazione è finita
-      if (!animazioneInCorso) return;
-      
-      const ritardoPartenza = 500 + Math.random() * 2000;
-      
-      const timerPartenza = setTimeout(() => {
-        // RICONTROLLA prima di accendere
+    // ==========================
+    // Funzioni ausiliarie
+    // ==========================
+    function avviaBollicine(prefixId, numero = 11) {
         if (!animazioneInCorso) return;
-        
-        bolla.style.display = "inline";
-        
-        const durataAccensione = 600 + Math.random() * 1500;
-        const timerSpegnimento = setTimeout(() => {
-          // RICONTROLLA prima di spegnere
-          if (!animazioneInCorso) return;
-          
-          bolla.style.display = "none";
-          
-          // Solo se l'animazione è ancora attiva, continua il ciclo
-          if (animazioneInCorso) {
+        for (let i = 1; i <= numero; i++) {
+            const bolla = document.getElementById(`${prefixId}_${i}`);
+            if (!bolla) continue;
+            bolla.style.display = "none";
+
+            function cicloBolla() {
+                if (!animazioneInCorso) return;
+                const ritardo = 500 + Math.random() * 2000;
+                const timerPartenza = setTimeout(() => {
+                    if (!animazioneInCorso) return;
+                    bolla.style.display = "inline";
+                    const durataAcc = 600 + Math.random() * 1500;
+                    const timerSpegnimento = setTimeout(() => {
+                        if (!animazioneInCorso) return;
+                        bolla.style.display = "none";
+                        if (animazioneInCorso) cicloBolla();
+                    }, durataAcc);
+                    bollicineTimers.push(timerSpegnimento);
+                }, ritardo);
+                bollicineTimers.push(timerPartenza);
+            }
             cicloBolla();
-          }
-        }, durataAccensione);
-        
-        bollicineTimers.push(timerSpegnimento);
-      }, ritardoPartenza);
-      
-      bollicineTimers.push(timerPartenza);
-    }
-    
-    // Avvia il ciclo per questa bolla
-    cicloBolla();
-  }
-}
-
-  /* ==========================
-     TESTO
-  ========================== */
-  function mostraTesto() {
-    if (!testo) return;
-    testo.style.opacity = 0;
-    setTimeout(() => (testo.style.opacity = 1), 50);
-  }
-  
-  
-  
-  
-  
-  
-  
-  /* ==========================
-   STATE MACHINE
-========================== */
-
-const AppState = {
-  LOADING: "loading",
-  INTRO: "intro",
-  ANIMATION: "animation",
-  IDLE: "idle"
-};
-
-let currentState = null;
-
-
-
-
-const transitions = {
-  [AppState.LOADING]:    [AppState.INTRO],
-  [AppState.INTRO]:      [AppState.ANIMATION],
-  [AppState.ANIMATION]:  [AppState.IDLE],
-  [AppState.IDLE]:       [AppState.ANIMATION] // restart consentito
-};
-
-
-
-function setState(newState) {
-
-  const prevState = currentState;
-
-  if (prevState === newState) return;
-
-  if (prevState !== null) {
-    const allowed = transitions[prevState] || [];
-    if (!allowed.includes(newState)) {
-      console.warn(`⛔ Transizione non permessa: ${prevState} → ${newState}`);
-      return;
-    }
-  }
-
-  console.log(`➡️ ${prevState} → ${newState}`);
-
-  if (prevState) {
-    runExit(prevState);
-  }
-
-  currentState = newState;
-
-  runEnter(newState);
-}
-
-
-
-
-
-
-
-function enterIdle() {
-  animazioneInCorso = true; // ora le bollicine possono girare
-  avviaBollicine("Bolla");
-  avviaBollicine("Bollicina");
-  mostraTesto();
-}
-
-
-
-
-
-
-function runExit(state) {
-
-  switch (state) {
-    case AppState.LOADING:   exitLoading(); break;
-    case AppState.INTRO:     exitIntro(); break;
-    case AppState.ANIMATION: exitAnimation(); break;
-    case AppState.IDLE:      exitIdle(); break;
-  }
-}
-
-
-
-function runEnter(state) {
-
-  switch (state) {
-    case AppState.LOADING:   enterLoading(); break;
-    case AppState.INTRO:     enterIntro(); break;
-    case AppState.ANIMATION: enterAnimation(); break;
-    case AppState.IDLE:      enterIdle(); break;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-/* ==========================
-   STATI
-========================== */
-function enterLoading() {
-  const container = document.getElementById("container");
-  container.style.visibility = "hidden";
-
-  // piccolo delay tecnico per sicurezza
-  setTimeout(() => {
-    setState(AppState.INTRO);
-  }, 50);
-}
-
-
-
-
-
-
-
-function enterIntro() {
-  const loader = document.getElementById("preloader");
-  const container = document.getElementById("container");
-
-  const titoli = document.getElementById("Titoli_Iniziali");
-  const velo = document.getElementById("Velo");
-  const quattordici = document.getElementById("Quattordici");
-
-  const FADE_DURATION = 1500;
-
-  // 1️⃣ Nascondi loader
-  loader.style.opacity = "0";
-  loader.style.transition = "opacity 0.5s ease";
-
-  setTimeout(() => {
-    loader.style.display = "none";
-    container.style.visibility = "visible";
-  }, 500);
-
-  // 2️⃣ Dopo 4 secondi fade titoli
-  setTimeout(() => {
-
-    [titoli, velo].forEach(el => el?.classList.add("fade-out"));
-
-    setTimeout(() => {
-
-      [titoli, velo].forEach(el => {
-        if (el) el.style.display = "none";
-      });
-
-      if (quattordici) quattordici.style.display = "none";
-
-      // 3️⃣ Avvia animazione principale
-      setState(AppState.ANIMATION);
-
-    }, FADE_DURATION);
-
-  }, 4000);
-}
-
-
-
-
-
-
-
-function enterAnimation() {
-
-  resetAnimazione();
-
-  setTimeout(() => {
-    requestAnimationFrame(anima);
-  }, 300);
-}
-
-
-
- 
- 
- 
- 
- 
- function exitLoading() {
-  // per ora nulla
-}
-
-function exitIntro() {
-  // se un domani metti timer o listener nell’intro
-  // li pulisci qui
-}
-
-function exitAnimation() {
-
-  animazioneInCorso = false;
-
-  bollicineTimers.forEach(t => clearTimeout(t));
-  bollicineTimers.length = 0;
-
-  if (occhiGatto) occhiGatto.style.display = "none";
-}
-
-function exitIdle() {
-
-  animazioneInCorso = false;
-
-  bollicineTimers.forEach(t => clearTimeout(t));
-  bollicineTimers.length = 0;
-}
-
-  
-  
-  
-  
-
-  /* ==========================
-     ANIMAZIONE TAPPO
-  ========================== */
-  function anima(time) {
-    if (!startTime) startTime = time;
-    animazioneInCorso = true;
-	
-	const lunghezza = traiettoria.getTotalLength();
-
-    // 🐱 IL GATTO SI SVEGLIA
-    if (!occhiAperti && occhiGatto) {
-      occhiGatto.style.display = "inline";
-      occhiAperti = true;
+        }
     }
 
-    const elapsed = time - startTime;
-    const t = Math.min(elapsed / durata, 1);
-    const punto = traiettoria.getPointAtLength(lunghezza * t);
-
-    // easing
-    const ease = t < 0.5
-      ? 2 * t * t
-      : 1 - Math.pow(-2 * t + 2, 2) / 2;
-
-    // rotazione
-    const rotBase = 360 * giriMinimi * ease;
-    const rumore = Math.sin(t * Math.PI * rumoreFrequenza) * rumoreAmpiezza;
-    const angolo = rotBase + rumore + spinExtra;
-
-    sughero.setAttribute(
-      "transform",
-      `
-        translate(${punto.x}, ${punto.y})
-        rotate(${angolo})
-        scale(1, ${flipY})
-        translate(-1120, -498)
-      `
-    );
-
-    if (t < 1) {
-      requestAnimationFrame(anima);
-    } else {
-      // Fine animazione, inizia lo zampillio
-      zampillio(0.5, 350);
-    }
-  }
-
-  /* ==========================
-     RESET
-  ========================== */
-  function resetAnimazione() {
-    startTime = null;
-    occhiAperti = false;
-    animazioneInCorso = false;
-
-
-    if (sughero) {
-      sughero.style.display = "inline";
-      sughero.removeAttribute("transform");
+    function mostraTesto() {
+        if (!testo) return;
+        testo.style.opacity = 0;
+        setTimeout(() => testo.style.opacity = 1, 50);
     }
 
-    if (mano) mano.style.display = "none";
-    if (smile) smile.style.display = "inline";
-    if (occhiGatto) occhiGatto.style.display = "none";
-
-    if (skizzo1) skizzo1.style.display = "none";
-    if (skizzo2) skizzo2.style.display = "none";
-    if (schiumaSopra) schiumaSopra.style.display = "none";
-    if (schiumaSotto) schiumaSotto.style.display = "none";
-
-    for (let i = 1; i <= 11; i++) {
-      const b1 = document.getElementById(`Bolla_${i}`);
-      const b2 = document.getElementById(`Bollicina_${i}`);
-      if (b1) b1.style.display = "none";
-      if (b2) b2.style.display = "none";
+    function zampillio(cicli, intervallo) {
+        const sequenza = [
+            { s1: true, s2: false }, { s1: true, s2: true },
+            { s1: false, s2: true }, { s1: true, s2: true },
+            { s1: true, s2: false }
+        ];
+        let ciclo = 0, step = 0;
+        const timer = setInterval(() => {
+            const stato = sequenza[step];
+            if (skizzo1) skizzo1.style.display = stato.s1 ? "inline" : "none";
+            if (skizzo2) skizzo2.style.display = stato.s2 ? "inline" : "none";
+            if (step === 1 && schiumaSopra) schiumaSopra.style.display = "inline";
+            if (step === 3 && schiumaSotto) schiumaSotto.style.display = "inline";
+            step++;
+            if (step >= sequenza.length) { step = 0; ciclo++; }
+            if (ciclo >= cicli) {
+                clearInterval(timer);
+                if (skizzo1) skizzo1.style.display = "none";
+                if (skizzo2) skizzo2.style.display = "none";
+                if (sughero) sughero.style.display = "none";
+                if (mano) mano.style.display = "inline";
+                if (smile) smile.style.display = "inline";
+                if (occhiGatto) occhiGatto.style.display = "none";
+                occhiAperti = false;
+                setState(AppState.IDLE);
+            }
+        }, intervallo);
     }
 
-    if (testo) testo.style.opacity = 0;
+    // ==========================
+    // STATE MACHINE
+    // ==========================
+    const AppState = { LOADING: "loading", INTRO: "intro", ANIMATION: "animation", IDLE: "idle" };
+    let currentState = null;
+    const transitions = {
+        [AppState.LOADING]: [AppState.INTRO],
+        [AppState.INTRO]: [AppState.ANIMATION],
+        [AppState.ANIMATION]: [AppState.IDLE],
+        [AppState.IDLE]: [AppState.ANIMATION]
+    };
 
-   
-  }
+    function setState(newState) {
+        const prevState = currentState;
+        if (prevState === newState) return;
+        if (prevState && !(transitions[prevState]?.includes(newState))) {
+            console.warn(`⛔ Transizione non permessa: ${prevState} → ${newState}`);
+            return;
+        }
+        console.log(`➡️ ${prevState} → ${newState}`);
+        if (prevState) runExit(prevState);
+        currentState = newState;
+        runEnter(newState);
+    }
 
- 
- 
- 
- /* ==========================
-   AVVIO ANIMAZIONE
-========================== */
-window.avviaAnimazionePrincipale = function () {
+    function runExit(state) {
+        switch (state) {
+            case AppState.LOADING: break;
+            case AppState.INTRO: break;
+            case AppState.ANIMATION: exitAnimation(); break;
+            case AppState.IDLE: exitIdle(); break;
+        }
+    }
 
-  if (animazioneInCorso) return;
+    function runEnter(state) {
+        switch (state) {
+            case AppState.LOADING: enterLoading(); break;
+            case AppState.INTRO: enterIntro(); break;
+            case AppState.ANIMATION: enterAnimation(); break;
+            case AppState.IDLE: enterIdle(); break;
+        }
+    }
 
-  startTime = null;
-  animazioneInCorso = true;
-  requestAnimationFrame(anima);
-};
+    // Stati principali
+    function enterLoading() { document.getElementById("container").style.visibility = "hidden"; setTimeout(() => setState(AppState.INTRO), 50); }
 
- 
- 
- 
+    function enterIntro() {
+        const loader = document.getElementById("preloader");
+        const container = document.getElementById("container");
+        const titoli = document.getElementById("Titoli_Iniziali");
+        const velo = document.getElementById("Velo");
+        const quattordici = document.getElementById("Quattordici");
+        loader.style.opacity = "0"; loader.style.transition = "opacity 0.5s ease";
+        setTimeout(() => { loader.style.display = "none"; container.style.visibility = "visible"; }, 500);
+        setTimeout(() => { [titoli, velo].forEach(el => el?.classList.add("fade-out")); setTimeout(() => { [titoli, velo].forEach(el => el && (el.style.display = "none")); if (quattordici) quattordici.style.display = "none"; setState(AppState.ANIMATION); }, 1500); }, 4000);
+    }
 
-  const restartBtn = document.getElementById("restart");
-  restartBtn?.addEventListener("click", e => {
-	  e.preventDefault();
-	  setState(AppState.ANIMATION);
-	});
-  
-  // 🔥 AVVIO INIZIALE
-setState(AppState.LOADING);
+    function enterAnimation() { resetAnimazione(); setTimeout(() => requestAnimationFrame(anima), 300); }
+
+    function enterIdle() { animazioneInCorso = true; avviaBollicine("Bolla"); avviaBollicine("Bollicina"); mostraTesto(); }
+
+    function exitAnimation() { animazioneInCorso = false; bollicineTimers.forEach(t => clearTimeout(t)); bollicineTimers.length = 0; if (occhiGatto) occhiGatto.style.display = "none"; }
+
+    function exitIdle() { animazioneInCorso = false; bollicineTimers.forEach(t => clearTimeout(t)); bollicineTimers.length = 0; }
+
+    // Animazione tappo
+    function anima(time) {
+        if (!startTime) startTime = time; animazioneInCorso = true;
+        const lunghezza = traiettoria.getTotalLength();
+        if (!occhiAperti && occhiGatto) { occhiGatto.style.display = "inline"; occhiAperti = true; }
+        const t = Math.min((time - startTime) / durata, 1);
+        const punto = traiettoria.getPointAtLength(lunghezza * t);
+        const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2)/2;
+        const angolo = 360 * giriMinimi * ease + Math.sin(t * Math.PI * rumoreFrequenza) * rumoreAmpiezza + spinExtra;
+        sughero.setAttribute("transform", `translate(${punto.x}, ${punto.y}) rotate(${angolo}) scale(1, ${flipY}) translate(-1120, -498)`);
+        if (t < 1) requestAnimationFrame(anima); else zampillio(0.5, 350);
+    }
+
+    function resetAnimazione() {
+        startTime = null; occhiAperti = false; animazioneInCorso = false;
+        if (sughero) { sughero.style.display = "inline"; sughero.removeAttribute("transform"); }
+        if (mano) mano.style.display = "none"; if (smile) smile.style.display = "inline"; if (occhiGatto) occhiGatto.style.display = "none";
+        if (skizzo1) skizzo1.style.display = "none"; if (skizzo2) skizzo2.style.display = "none";
+        if (schiumaSopra) schiumaSopra.style.display = "none"; if (schiumaSotto) schiumaSotto.style.display = "none";
+        for (let i=1;i<=11;i++){ const b1=document.getElementById(`Bolla_${i}`); const b2=document.getElementById(`Bollicina_${i}`); if(b1) b1.style.display="none"; if(b2) b2.style.display="none"; }
+        if(testo) testo.style.opacity=0;
+    }
+
+    window.avviaAnimazionePrincipale = () => { if(animazioneInCorso) return; startTime=null; animazioneInCorso=true; requestAnimationFrame(anima); };
+
+    const restartBtn = document.getElementById("restart");
+    restartBtn?.addEventListener("click", e => { e.preventDefault(); setState(AppState.ANIMATION); });
+
+    setState(AppState.LOADING);
 });
-
-
-
-
 </script>
 
 

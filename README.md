@@ -76,6 +76,11 @@ It works best when observed calmly, allowing the illustration to “happen” ov
 
 ---
 
+
+## Documentazione tecnica
+La documentazione completa è disponibile nella cartella [docs](docs/).
+
+
 ## Credits
 
 - SVG illustration entirely created with Inkscape  
