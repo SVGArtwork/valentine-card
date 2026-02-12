@@ -36,16 +36,6 @@
 	}
 	
 	
-	#preloader{
-	background:#trasparent url(icons/Tre_Cerchi.svg) no-repeat center center; 
-	background-size: 5%;
-	height:100vh;
-	width:100%;
-	position:fixed;
-	z-index:100;
-	transition: opacity 0.5s ease;
-	}
-	
 
 
 
@@ -282,40 +272,16 @@ cursor: pointer;
 </div>
 
 
-<script>
- // --- ATTENDI SVG PRONTO (Traiettoria misurabile) ---
-  function attendiSVGPronto(callback) {
-    const check = () => {
-      const traiettoria = document.getElementById('Traiettoria');
-      if (traiettoria && typeof traiettoria.getTotalLength === 'function') {
-        try {
-          if (traiettoria.getTotalLength() > 0) {
-            console.log('✅ SVG pronto, posso partire con i titoli');
-            svgPronto = true;
-            callback?.();
-            return true;
-          }
-        } catch(e) {}
-      }
-      console.log('⏳ In attesa che SVG sia pronto...');
-      return false;
-    };
-    
-    if (!check()) {
-      const interval = setInterval(() => {
-        if (check()) {
-          clearInterval(interval);
-        }
-      }, 100);
-    }
-  }
-</script>
+
 
 
 
 
 
 <script>
+/* ==========================
+   SHOW PANEL INFO
+========================== */
 const svgInfoMap = {
     Gatto: {
         title: 'Valentine Digital Card',
@@ -367,7 +333,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+
+
+
+
 <script>
+/* ==========================
+   ZOOM e PANNING
+========================== */
 document.addEventListener('DOMContentLoaded', () => {
     // === INIZIALIZZAZIONE PAN-ZOOM ===
     const panZoom = svgPanZoom('#svg-content', {
@@ -555,7 +528,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ========================== */
   const delay = 2000;
   const durata = 2000;
-  const lunghezza = traiettoria.getTotalLength();
+  //const lunghezza = traiettoria.getTotalLength();
   const giriMinimi = 2;
   const rumoreAmpiezza = 25;
   const rumoreFrequenza = 12;
@@ -620,9 +593,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (occhiGatto) occhiGatto.style.display = "none";
         occhiAperti = false;
 
-        avviaBollicine("Bolla");
-        avviaBollicine("Bollicina");
-        mostraTesto();
+     
 		setState(AppState.IDLE);
       }
     }, intervallo);
@@ -716,54 +687,77 @@ const transitions = {
   [AppState.IDLE]:       [AppState.ANIMATION] // restart consentito
 };
 
+
+
 function setState(newState) {
 
   const prevState = currentState;
 
-  // Stato iniziale
-  if (prevState === null) {
-    currentState = newState;
-    runState(newState, null);
-    return;
+  if (prevState === newState) return;
+
+  if (prevState !== null) {
+    const allowed = transitions[prevState] || [];
+    if (!allowed.includes(newState)) {
+      console.warn(`⛔ Transizione non permessa: ${prevState} → ${newState}`);
+      return;
+    }
   }
 
-  // Controllo transizione valida
-  const allowed = transitions[prevState] || [];
+  console.log(`➡️ ${prevState} → ${newState}`);
 
-  if (!allowed.includes(newState)) {
-    console.warn(`⛔ Transizione non permessa: ${prevState} → ${newState}`);
-    return;
+  if (prevState) {
+    runExit(prevState);
   }
 
   currentState = newState;
-  console.log(`➡️ ${prevState} → ${newState}`);
 
-  runState(newState, prevState);
+  runEnter(newState);
 }
 
 
 
-function runState(state, prevState) {
+
+
+
+
+function enterIdle() {
+  animazioneInCorso = true; // ora le bollicine possono girare
+  avviaBollicine("Bolla");
+  avviaBollicine("Bollicina");
+  mostraTesto();
+}
+
+
+
+
+
+
+function runExit(state) {
 
   switch (state) {
-
-    case AppState.LOADING:
-      enterLoading();
-      break;
-
-    case AppState.INTRO:
-      enterIntro();
-      break;
-
-    case AppState.ANIMATION:
-      enterAnimation(prevState);
-      break;
-
-    case AppState.IDLE:
-      enterIdle();
-      break;
+    case AppState.LOADING:   exitLoading(); break;
+    case AppState.INTRO:     exitIntro(); break;
+    case AppState.ANIMATION: exitAnimation(); break;
+    case AppState.IDLE:      exitIdle(); break;
   }
 }
+
+
+
+function runEnter(state) {
+
+  switch (state) {
+    case AppState.LOADING:   enterLoading(); break;
+    case AppState.INTRO:     enterIntro(); break;
+    case AppState.ANIMATION: enterAnimation(); break;
+    case AppState.IDLE:      enterIdle(); break;
+  }
+}
+
+
+
+
+
 
 
 
@@ -777,10 +771,12 @@ function enterLoading() {
   const container = document.getElementById("container");
   container.style.visibility = "hidden";
 
-  attendiSVGPronto(() => {
+  // piccolo delay tecnico per sicurezza
+  setTimeout(() => {
     setState(AppState.INTRO);
-  });
+  }, 50);
 }
+
 
 
 
@@ -833,28 +829,49 @@ function enterIntro() {
 
 
 
+function enterAnimation() {
 
+  resetAnimazione();
 
-
-
-
-
-function enterAnimation(prevState) {
-
-  // Se arrivo da IDLE → è un restart
-  if (prevState === AppState.IDLE) {
-    resetAnimazione();
-    return;
-  }
-
-  // Avvio normale (da INTRO)
-  if (window.avviaAnimazionePrincipale) {
-    window.avviaAnimazionePrincipale();
-  }
+  setTimeout(() => {
+    requestAnimationFrame(anima);
+  }, 300);
 }
 
 
+
  
+ 
+ 
+ 
+ 
+ function exitLoading() {
+  // per ora nulla
+}
+
+function exitIntro() {
+  // se un domani metti timer o listener nell’intro
+  // li pulisci qui
+}
+
+function exitAnimation() {
+
+  animazioneInCorso = false;
+
+  bollicineTimers.forEach(t => clearTimeout(t));
+  bollicineTimers.length = 0;
+
+  if (occhiGatto) occhiGatto.style.display = "none";
+}
+
+function exitIdle() {
+
+  animazioneInCorso = false;
+
+  bollicineTimers.forEach(t => clearTimeout(t));
+  bollicineTimers.length = 0;
+}
+
   
   
   
@@ -866,6 +883,8 @@ function enterAnimation(prevState) {
   function anima(time) {
     if (!startTime) startTime = time;
     animazioneInCorso = true;
+	
+	const lunghezza = traiettoria.getTotalLength();
 
     // 🐱 IL GATTO SI SVEGLIA
     if (!occhiAperti && occhiGatto) {
@@ -913,9 +932,6 @@ function enterAnimation(prevState) {
     occhiAperti = false;
     animazioneInCorso = false;
 
-    bollicineAttive = false;
-    bollicineTimers.forEach(t => clearTimeout(t));
-    bollicineTimers.length = 0;
 
     if (sughero) {
       sughero.style.display = "inline";
@@ -940,9 +956,7 @@ function enterAnimation(prevState) {
 
     if (testo) testo.style.opacity = 0;
 
-    setTimeout(() => {
-      requestAnimationFrame(anima);
-    }, 300);
+   
   }
 
  
